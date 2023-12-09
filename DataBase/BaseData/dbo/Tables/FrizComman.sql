@@ -1,0 +1,27 @@
+﻿CREATE TABLE [dbo].[FrizComman] (
+    [FNcom]      INT          NOT NULL,
+    [Ncod]       INT          NOT NULL,
+    [ND]         DATETIME     NULL,
+    [Tm]         VARCHAR (8)  NULL,
+    [sp]         MONEY        DEFAULT ((0)) NULL,
+    [sc]         MONEY        DEFAULT ((0)) NULL,
+    [izmen]      MONEY        DEFAULT ((0)) NULL,
+    [isprav]     MONEY        DEFAULT ((0)) NULL,
+    [remove]     MONEY        DEFAULT ((0)) NULL,
+    [ostat]      MONEY        DEFAULT ((0)) NULL,
+    [realiz]     MONEY        DEFAULT ((0)) NULL,
+    [corr]       MONEY        DEFAULT ((0)) NULL,
+    [plata]      MONEY        DEFAULT ((0)) NULL,
+    [closdate]   DATETIME     NULL,
+    [Op]         SMALLINT     DEFAULT ((0)) NULL,
+    [Our_ID]     SMALLINT     NULL,
+    [doc_nom]    VARCHAR (10) NULL,
+    [doc_date]   DATETIME     NULL,
+    [Comp]       VARCHAR (16) NULL,
+    [izmensc]    MONEY        DEFAULT ((0)) NULL,
+    [errflag]    INT          DEFAULT ((0)) NULL,
+    [copyexists] INT          NULL,
+    [origdate]   DATETIME     NULL,
+    PRIMARY KEY CLUSTERED ([FNcom] ASC)
+);
+

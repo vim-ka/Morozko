@@ -1,0 +1,28 @@
+﻿CREATE TABLE [dbo].[BigZC] (
+    [DatNom]   NUMERIC (13)   NOT NULL,
+    [SellDate] DATETIME       NULL,
+    [Nnak]     NUMERIC (5)    NULL,
+    [B_ID]     NUMERIC (5)    NULL,
+    [Fam]      VARCHAR (60)   NULL,
+    [OP]       NUMERIC (3)    NULL,
+    [SP]       MONEY          NULL,
+    [SC]       MONEY          NULL,
+    [Extra]    NUMERIC (7, 2) NULL,
+    [Srok]     NUMERIC (3)    NULL,
+    [FACT]     MONEY          NULL,
+    [OUR_ID]   NUMERIC (1)    NULL,
+    [AG_ID]    NUMERIC (3)    NULL,
+    [Closed]   BIT            NULL,
+    [Bank]     BIT            NULL,
+    [Izmen]    MONEY          NULL,
+    [Back]     MONEY          NULL,
+    [TovChk]   BIT            NULL,
+    [PKO]      BIT            NULL,
+    [Frizer]   BIT            NULL,
+    [QTYFRIZ]  NUMERIC (3)    NULL,
+    [ACTN]     BIT            NULL,
+    [CK]       BIT            NULL,
+    [Tara]     BIT            NULL,
+    CONSTRAINT [BigZC_pk] PRIMARY KEY CLUSTERED ([DatNom] ASC)
+);
+

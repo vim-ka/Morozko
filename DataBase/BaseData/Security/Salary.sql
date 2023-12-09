@@ -1,0 +1,3 @@
+﻿CREATE SCHEMA [Salary]
+    AUTHORIZATION [dbo];
+

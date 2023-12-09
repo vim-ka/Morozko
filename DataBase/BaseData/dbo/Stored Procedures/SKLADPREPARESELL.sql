@@ -1,0 +1,289 @@
+﻿CREATE PROCEDURE dbo.SKLADPREPARESELL
+  @ACTION TINYINT=0, -- 0 - НАБОР
+  @COMP VARCHAR(30),
+  @HITAG INT,
+  @VES DECIMAL(10,3),
+  @SKLADLIST VARCHAR(200),
+  @DATNOM INT, 
+  @OP INT, 
+  @KOLERROR INT OUT,
+  @SPK INT=0,
+  @nzid INT=0
+  WITH RECOMPILE
+AS
+  DECLARE @ID INT, @JUNK INT, @NEWID INT, @LASTIZMID INT, @LASTID INT, @ORIGID INT, @ORIGWEIGHT DECIMAL(10,3),
+    @PRICE DECIMAL(10,2), @COST DECIMAL(13,5), @NEWPRICE DECIMAL(10,2), @NEWCOST DECIMAL(13,5), 
+    @SKLAD INT, @NEWSKLAD INT, @SS VARCHAR(100), @TEKWEIGHT DECIMAL(10,3), @TEKKOL DECIMAL(10,3),
+    @PROCERROR INT, @UNIONWEIGHT DECIMAL(10,3), @QTY INT, @ORIGQTY INT, @FIRMGROUP INT,  @OK BIT, @MSG VARCHAR(MAX),
+    @HEAD VARCHAR(256), @TRAN VARCHAR(20),@KOL INT 
+
+BEGIN
+  SET NOCOUNT ON
+  SET @MSG=''
+  IF @nzid=0
+  BEGIN
+    set @nzid=
+      (SELECT top 1 nzid FROM nvZakaz z WHERE z.datnom=@DATNOM AND z.Hitag=@HITAG AND z.Done=0)
+  END 
+  
+  SELECT @KOL=z.zakaz 
+  FROM nvZakaz z 
+  WHERE z.nzid=@nzid
+   
+  IF @VES>0 AND @KOL>0
+  BEGIN
+	  DELETE FROM PARAMSKLAD WHERE COMP=@COMP;
+		SET @TRAN='SKLADPREPARESELL'
+		BEGIN TRANSACTION @TRAN
+		
+	  SET @KOLERROR=0
+	  SET @PROCERROR=0
+	  
+    SET @FIRMGROUP=(SELECT F.FIRMGROUP FROM NC C JOIN FIRMSCONFIG F ON C.OURID=F.OUR_ID WHERE C.DATNOM=@DATNOM)
+	  
+    SELECT @TEKWEIGHT=SUM(V.WEIGHT*(V.MORN-V.SELL+V.ISPRAV-V.REMOV-V.REZERV)) 
+		FROM TDVI V
+		WHERE V.SKLAD IN (SELECT K FROM DBO.STR2INTARRAY(@SKLADLIST))
+				  AND V.HITAG=@HITAG
+		
+	 
+	  -- ПОДБОР ТОЧНОГО СОВПАДЕНИЯ ВЕСА:
+	  SELECT TOP 1 @ID=ID,
+                 @ORIGID=V.ID, 
+                 @SKLAD=V.SKLAD, 
+                 @ORIGWEIGHT=V.WEIGHT*(V.MORN-V.SELL+V.ISPRAV-V.REMOV),
+		             @PRICE=V.PRICE, 
+                 @COST=V.COST, 
+                 @UNIONWEIGHT=V.WEIGHT, 
+                 @ORIGQTY=(V.MORN-V.SELL+V.ISPRAV-V.REMOV)
+	  FROM TDVI V 
+    JOIN FIRMSCONFIG F ON V.OUR_ID=F.OUR_ID
+	  WHERE V.HITAG=@HITAG 
+          AND V.WEIGHT>0
+			    AND V.SKLAD IN (SELECT K FROM DBO.STR2INTARRAY(@SKLADLIST))
+			    AND ABS(V.WEIGHT*(V.MORN-V.SELL+V.ISPRAV-V.REMOV)-@VES)<0.001
+          AND V.LOCKED=0 
+          AND (V.MORN-V.SELL+V.ISPRAV-V.REMOV)>0
+			    AND F.FIRMGROUP=@FIRMGROUP
+          AND V.ID>0
+          and v.cost>0 and v.price>0          
+	  ORDER BY V.SROKH;
+	  
+    IF @ID IS NULL 
+      SET @OK=0
+	  ELSE 
+    BEGIN  
+			SET @OK=1
+			SET @LASTID=@ORIGID
+			SET @NEWCOST=@COST
+			SET @NEWPRICE=@PRICE
+			SET @NEWSKLAD=@SKLAD
+			SET @QTY=@ORIGQTY      
+	  END;
+    		
+	  -- ПОДБОР КРАТНОГО ВЕСА:
+	  IF @OK=0 
+    BEGIN
+			SELECT TOP 1 @ID=ID,
+				           @ORIGID=V.ID, 
+                   @SKLAD=V.SKLAD, 
+                   @ORIGWEIGHT=V.WEIGHT*(V.MORN-V.SELL+V.ISPRAV-V.REMOV),
+				           @PRICE=V.PRICE, 
+                   @COST=V.COST, 
+                   @UNIONWEIGHT=V.WEIGHT, 
+                   @ORIGQTY=(V.MORN-V.SELL+V.ISPRAV-V.REMOV),
+				           @QTY=IIF(@VES/V.WEIGHT=0,1,@VES/V.WEIGHT)
+			FROM TDVI V JOIN FIRMSCONFIG F ON V.OUR_ID=F.OUR_ID
+			WHERE V.HITAG=@HITAG 
+            AND V.WEIGHT>0
+				    AND V.SKLAD IN (SELECT K FROM DBO.STR2INTARRAY(@SKLADLIST))
+				    AND @VES % V.WEIGHT=0
+				    AND V.WEIGHT*(V.MORN-V.SELL+V.ISPRAV-V.REMOV)>@VES 
+            AND V.LOCKED=0 
+            AND (V.MORN-V.SELL+V.ISPRAV-V.REMOV)>0
+				    AND F.FIRMGROUP=@FIRMGROUP
+            AND V.ID>0
+          	and v.cost>0 and v.price>0          
+			ORDER BY V.SROKH;  
+			
+      IF @ID IS NULL 
+        SET @OK=0
+			ELSE 
+      BEGIN
+				SET @OK=1
+				SET @LASTID=@ORIGID
+				SET @NEWCOST=@COST
+				SET @NEWPRICE=@PRICE
+				SET @NEWSKLAD=@SKLAD       
+			END;
+	  END;
+        
+		-- ПОДБОР ЛЮБОГО ВЕСА:
+	  IF @OK=0 
+    BEGIN
+		  SELECT TOP 1 @ID=ID,
+			             @ORIGID=V.ID, 
+                   @SKLAD=V.SKLAD, 
+                   @ORIGWEIGHT=V.WEIGHT*(V.MORN-V.SELL+V.ISPRAV-V.REMOV),
+			             @PRICE=V.PRICE, 
+                   @COST=V.COST, 
+                   @UNIONWEIGHT=V.WEIGHT, 
+                   @ORIGQTY=(V.MORN-V.SELL+V.ISPRAV-V.REMOV)
+		  FROM TDVI V JOIN FIRMSCONFIG F ON V.OUR_ID=F.OUR_ID
+		  WHERE V.HITAG=@HITAG 
+            AND V.WEIGHT>0
+				    AND V.SKLAD IN (SELECT K FROM DBO.STR2INTARRAY(@SKLADLIST))
+				    AND V.WEIGHT*(V.MORN-V.SELL+V.ISPRAV-V.REMOV)>@VES 
+				    AND V.LOCKED=0 
+            AND (V.MORN-V.SELL+V.ISPRAV-V.REMOV)>0
+				    AND F.FIRMGROUP=@FIRMGROUP
+            AND V.ID>0
+          	and v.cost>0 and v.price>0          
+		  ORDER BY V.WEIGHT DESC, V.SROKH
+		  
+		  IF @ID IS NULL 
+        SET @OK=0
+		  ELSE 
+      BEGIN
+				SET @OK=1;
+				SET @QTY=CEILING(@VES/@UNIONWEIGHT);
+
+				-- КАКУЮ СТРОКУ РАСПИЛИТЬ:
+				INSERT INTO PARAMSKLAD(COMP,  ACT,  ID,  HITAG,  SKLAD,  [WEIGHT],  PRICE,  COST,  NOMER,  QTY) 
+				VALUES (@COMP,  'DIV-',  @ORIGID,  @HITAG,  @SKLAD,  @UNIONWEIGHT,  @PRICE,  @COST, 0,  @QTY);
+				IF @@ERROR<>0 SET @KOLERROR=@KOLERROR+2;
+
+				-- НОВАЯ СТРОКА С ОСТАТКОМ ПРИ ЕДИНИЧНОМ ИСХОДНОМ КОЛИЧЕСТВЕ:
+			  IF @ORIGQTY=1 BEGIN
+					INSERT INTO PARAMSKLAD(COMP,  ACT,  ID,  HITAG,  SKLAD,  [WEIGHT],  PRICE,  COST,  NOMER,  QTY) 
+					VALUES (@COMP,  'DIV-',  NULL,  @HITAG,  @SKLAD,  @UNIONWEIGHT-@VES,  
+						@PRICE/@UNIONWEIGHT*(@UNIONWEIGHT-@VES), @COST/@UNIONWEIGHT*(@UNIONWEIGHT-@VES), 1,  1);
+					IF @@ERROR<>0 SET @KOLERROR=@KOLERROR+4; 
+			  END
+				ELSE BEGIN
+					INSERT INTO PARAMSKLAD(COMP,  ACT,  ID,  HITAG,  SKLAD,  [WEIGHT],  PRICE,  COST,  NOMER,  QTY) 
+					VALUES (@COMP,  'DIV-',  NULL,  @HITAG,  @SKLAD,  
+						@UNIONWEIGHT*@QTY-@VES,  
+						@PRICE/@UNIONWEIGHT*(@UNIONWEIGHT*@QTY-@VES),  
+						@COST/@UNIONWEIGHT*(@UNIONWEIGHT*@QTY-@VES), 1,  1);
+					IF @@ERROR<>0 SET @KOLERROR=@KOLERROR+8; 
+				END;
+			 
+			  -- ВТОРАЯ НОВАЯ СТРОКА, ЭТО БУДЕТ ПРОДАНО:
+			  INSERT INTO PARAMSKLAD(COMP,  ACT,  ID,  HITAG,  SKLAD,  [WEIGHT],  PRICE,  COST,  NOMER,  QTY) 
+			  VALUES (@COMP,  'DIV-',  NULL,  @HITAG,  @SKLAD,  @VES,  
+					@PRICE*@VES/@UNIONWEIGHT,  @COST*@VES/@UNIONWEIGHT, 2,  1);
+			  IF @@ERROR<>0 SET @KOLERROR=@KOLERROR+16
+
+				SET @JUNK=0; SET @NEWID=0;
+        
+				IF @KOLERROR=0 
+				BEGIN
+                 SET @PROCERROR=-1;
+				 EXEC PROCESSSKLAD 'DIV-', NULL, @HITAG, NULL, 
+							NULL, NULL, 0, @OP, @COMP,
+							NULL, 0, 1,  0, 0,0,
+							'ПРОДАЖА НА ВЕС', @NEWID OUTPUT,  0,
+							@PROCERROR OUTPUT, NULL, @JUNK,NULL;        
+        IF ISNULL(@PROCERROR,0)<>0 OR ISNULL(@NEWID,0)=0
+						 SET @KOLERROR=@KOLERROR+32;
+				END 
+			
+			
+				IF @KOLERROR=0 
+				BEGIN
+					SET @LASTID=@NEWID;
+					-- SELECT @LASTID=NEWID, @NEWCOST=NEWCOST, @NEWPRICE=NEWPRICE, @NEWSKLAD=NEWSKLAD FROM IZMEN WHERE IZMID=@LASTIZMID;
+					SELECT @NEWCOST=COST, @NEWPRICE=PRICE, @NEWSKLAD=SKLAD FROM TDVI WHERE ID=@NEWID;
+					select @newcost=cost*@ves, @newprice=price*@ves from dbo.nvzakaz where nzid=@nzid
+          IF @@ERROR<>0 SET @KOLERROR=@KOLERROR+64;
+					SET @QTY=1;
+				END
+			END
+		
+		END;  -- КОНЕЦ БЛОКА ПОДБОРА ЛЮБОГО ВЕСА.
+
+
+
+
+    -- ОПЕРАЦИИ ПОСЛЕ ПОДБОРА:
+		IF @OK=0 SET @KOLERROR=1;
+	  IF @KOLERROR=0 BEGIN
+			UPDATE TDVI SET SELL=SELL+@QTY WHERE ID=@LASTID
+			IF @@ERROR<>0 SET @KOLERROR=@KOLERROR+128;      
+	  END;
+	    
+	  IF @KOLERROR=0 BEGIN
+         SET @TEKKOL=(SELECT KOL FROM NV WHERE DATNOM=@DATNOM AND TEKID=@LASTID);
+         IF @TEKKOL IS NULL 
+            INSERT INTO NV(DATNOM,TEKID,HITAG,SKLAD,PRICE,COST,KOL,TIP)
+                  VALUES(@DATNOM, @LASTID, @HITAG, @NEWSKLAD, @NEWPRICE, @NEWCOST, @QTY, 0);
+         ELSE IF @TEKKOL=0
+            UPDATE NV SET HITAG=@HITAG, SKLAD=@NEWSKLAD,PRICE=@NEWPRICE,COST=@NEWCOST, KOL=@QTY, TIP=0 WHERE DATNOM=@DATNOM AND TEKID=@LASTID;
+         ELSE SET @KOLERROR=@KOLERROR+512;      
+	  END;
+      
+    IF @KOLERROR=0 
+	  BEGIN    
+	      UPDATE NVZAKAZ SET DONE=1,
+		                       TMEND=CONVERT(VARCHAR(8),GETDATE(),108),
+			                     DTEND=CONVERT(VARCHAR(10),GETDATE(),104),
+			                     CURWEIGHT=@VES,
+			                     TEKWEIGHT=@TEKWEIGHT,
+			                     ID=@LASTID,
+			                     COMP=COMP+'#'+@COMP,
+                           OP=@OP,
+                           SPK=@SPK
+		    WHERE DATNOM=@DATNOM 
+              AND HITAG=@HITAG 
+              AND DONE=0;
+	      
+        IF @@ERROR<>0 SET @KOLERROR=@KOLERROR+1024;	             
+	  END
+		
+		IF @KOLERROR=0 
+		BEGIN
+			IF EXISTS(SELECT * FROM NC WHERE DATNOM=@DATNOM AND  NOT MARSH IN (0,99))
+			BEGIN
+				DECLARE @M INT
+				DECLARE @N DATETIME 
+				
+				SELECT @M=MARSH, @N=ND
+				FROM NC 
+				WHERE DATNOM=@DATNOM
+				
+				UPDATE MARSH SET WEIGHT=WEIGHT+@VES, BRUTTOWEIGHT=BRUTTOWEIGHT+@VES
+				WHERE MARSH=@M AND ND=@N
+        IF @@ERROR<>0 SET @KOLERROR=@KOLERROR+1024;                       
+			END
+		END		
+	END
+  
+  --обработка заявок на разбор
+  IF @KOL<0
+  BEGIN
+    UPDATE NVZAKAZ SET DONE=1,
+		                   TMEND=CONVERT(VARCHAR(8),GETDATE(),108),
+			                 DTEND=CONVERT(VARCHAR(10),GETDATE(),104),
+			                 CURWEIGHT=@VES,
+			                 COMP=COMP+'#'+@COMP,
+                       OP=@OP,
+                       SPK=@SPK
+		WHERE DATNOM=@DATNOM 
+          AND HITAG=@HITAG 
+          AND DONE=0;
+  END
+  IF @KOL>0
+  IF @KOLERROR=0
+  BEGIN
+    COMMIT TRANSACTION @TRAN
+    SET @HEAD='SKLADPREPARESELL::'+@COMP+'::COMMIT'      
+  END 
+  ELSE 
+  BEGIN  
+    ROLLBACK TRAN @TRAN       
+    INSERT INTO PROCERRORS(ERRNUM, ERRMESS, PROCNAME, ERRLINE) SELECT ERROR_NUMBER(), ERROR_MESSAGE(), OBJECT_NAME(@@PROCID), ERROR_LINE()  
+    
+  END
+SET NOCOUNT OFF
+END

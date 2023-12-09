@@ -1,0 +1,3 @@
+﻿CREATE SCHEMA [LoadData]
+    AUTHORIZATION [dbo];
+

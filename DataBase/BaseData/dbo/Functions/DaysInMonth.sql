@@ -1,0 +1,13 @@
+﻿CREATE FUNCTION dbo.DaysInMonth (@ND datetime)
+RETURNS int
+AS
+BEGIN
+  declare @D int
+  set @D=(SELECT
+   CASE
+   WHEN MONTH(@ND) IN(1,3,5,7,8,10,12) THEN 31
+   WHEN MONTH(@ND) IN(4,6,9,11) THEN 30
+   WHEN MONTH(@ND)=2 THEN CASE ISDATE(DATENAME(YEAR,@ND)+'0229') WHEN 1 THEN 29 ELSE 28 END
+  END)  
+  return @D
+END

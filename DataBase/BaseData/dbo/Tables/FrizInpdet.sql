@@ -1,0 +1,27 @@
+﻿CREATE TABLE [dbo].[FrizInpdet] (
+    [inId]       INT          IDENTITY (1, 1) NOT NULL,
+    [ND]         DATETIME     NULL,
+    [FNcom]      INT          NOT NULL,
+    [Nom]        INT          NOT NULL,
+    [Nname]      VARCHAR (60) NULL,
+    [Price]      MONEY        DEFAULT ((0)) NULL,
+    [Cost]       MONEY        DEFAULT ((0)) NULL,
+    [Tip]        SMALLINT     CONSTRAINT [DF__FrizInpdet__Tip__5B8E6C8E] DEFAULT ((0)) NULL,
+    [InvNom]     VARCHAR (20) NULL,
+    [FabNom]     VARCHAR (15) NULL,
+    [Ob]         FLOAT (53)   NULL,
+    [Korzin]     SMALLINT     NULL,
+    [Zamok]      TINYINT      DEFAULT ((0)) NULL,
+    [NCountry]   INT          NULL,
+    [SkladNo]    SMALLINT     NULL,
+    [fsID]       SMALLINT     DEFAULT ((0)) NULL,
+    [mID]        SMALLINT     DEFAULT ((0)) NULL,
+    [Remark]     VARCHAR (20) NULL,
+    [Procreator] VARCHAR (20) NULL,
+    [ffID]       INT          NULL,
+    [CondID]     INT          NULL,
+    [FMod]       INT          NULL,
+    CONSTRAINT [FrizInpdet_pk] PRIMARY KEY CLUSTERED ([inId] ASC),
+    CONSTRAINT [FrizInpdet_fk] FOREIGN KEY ([Tip]) REFERENCES [dbo].[FrizerTip] ([Tip]) ON UPDATE CASCADE
+);
+

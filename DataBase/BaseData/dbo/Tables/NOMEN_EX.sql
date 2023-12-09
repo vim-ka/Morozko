@@ -1,0 +1,9 @@
+﻿CREATE TABLE [dbo].[NOMEN_EX] (
+    [LIST_ID]    NUMERIC (4)   NULL,
+    [HITAG]      NUMERIC (6)   NULL,
+    [TOVAR_NAME] VARCHAR (100) NULL,
+    [BAR_CODE]   VARCHAR (13)  NULL,
+    [PRODUC_NAM] VARCHAR (100) NULL,
+    [INN]        VARCHAR (12)  NULL
+);
+

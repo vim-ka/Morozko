@@ -1,0 +1,26 @@
+﻿CREATE TABLE [dbo].[FCardsLog] (
+    [fclId]       INT           IDENTITY (1, 1) NOT NULL,
+    [fclDate]     DATETIME      NULL,
+    [fclUsr]      INT           NULL,
+    [fclTypeOp]   VARCHAR (3)   NULL,
+    [CardNom]     VARCHAR (25)  NULL,
+    [FuelCardTip] INT           NULL,
+    [ND]          DATETIME      NULL,
+    [NDRET]       DATETIME      NULL,
+    [TypeFuel]    INT           NULL,
+    [Limit]       INT           NULL,
+    [Status]      INT           NULL,
+    [fcBlBegDate] DATETIME      NULL,
+    [fcBlEndDate] DATETIME      NULL,
+    [Org]         INT           NULL,
+    [uin]         INT           NULL,
+    [pin]         VARCHAR (4)   NULL,
+    [p_id]        INT           NULL,
+    [prim]        VARCHAR (300) NULL,
+    [lostcard_id] INT           NULL,
+    [idvehicle]   INT           NULL,
+    [vehiclebeg]  DATETIME      NULL,
+    [vehicleend]  DATETIME      NULL,
+    CONSTRAINT [FCardsLog_uq] UNIQUE NONCLUSTERED ([fclId] ASC)
+);
+

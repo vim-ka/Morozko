@@ -1,0 +1,3 @@
+﻿CREATE SCHEMA [RestMon]
+    AUTHORIZATION [dbo];
+

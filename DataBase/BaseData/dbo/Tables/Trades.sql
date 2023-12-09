@@ -1,0 +1,6 @@
+﻿CREATE TABLE [dbo].[Trades] (
+    [trID]  INT          IDENTITY (1, 1) NOT NULL,
+    [tName] VARCHAR (40) NULL,
+    CONSTRAINT [UQ__Trades__9C31E3731129DC39] UNIQUE NONCLUSTERED ([trID] ASC)
+);
+

@@ -1,0 +1,6 @@
+﻿CREATE TABLE [dbo].[BrFmt] (
+    [Fmt]     INT          IDENTITY (1, 1) NOT NULL,
+    [FmtName] VARCHAR (60) CONSTRAINT [DF__BrFmt__FmtName__0A9D95DB] DEFAULT ('') NULL,
+    CONSTRAINT [PK__BrFmt__C1D1503FB08249CD] PRIMARY KEY CLUSTERED ([Fmt] ASC)
+);
+

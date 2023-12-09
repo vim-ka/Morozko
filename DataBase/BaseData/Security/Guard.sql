@@ -1,0 +1,3 @@
+﻿CREATE SCHEMA [Guard]
+    AUTHORIZATION [dbo];
+

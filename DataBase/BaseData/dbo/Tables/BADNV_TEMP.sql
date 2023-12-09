@@ -1,0 +1,7 @@
+﻿CREATE TABLE [dbo].[BADNV_TEMP] (
+    [DATNOM] INT NULL,
+    [TEKID]  INT NULL,
+    [KOL]    INT NULL,
+    [KOL_B]  INT NULL
+);
+

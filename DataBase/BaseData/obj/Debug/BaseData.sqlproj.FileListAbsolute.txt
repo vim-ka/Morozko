@@ -1,0 +1,10 @@
+D:\Projects\DataBase projects\BaseData_1\BaseData\bin\Debug\BaseData.dacpac
+D:\Projects\DataBase projects\BaseData_1\BaseData\bin\Debug\BaseData.dll
+D:\Projects\DataBase projects\BaseData_1\BaseData\bin\Debug\BaseData.pdb
+D:\Projects\DataBase projects\BaseData_1\BaseData\obj\Debug\BaseData.sqlproj.AssemblyReference.cache
+D:\Projects\DataBase projects\BaseData_1\BaseData\obj\Debug\Model.xml
+D:\Projects\DataBase projects\BaseData_1\BaseData\obj\Debug\refactor.xml
+D:\Projects\DataBase projects\BaseData_1\BaseData\obj\Debug\postdeploy.sql
+D:\Projects\DataBase projects\BaseData_1\BaseData\obj\Debug\predeploy.sql
+D:\Projects\DataBase projects\BaseData_1\BaseData\obj\Debug\BaseData.dll
+D:\Projects\DataBase projects\BaseData_1\BaseData\obj\Debug\BaseData.pdb
